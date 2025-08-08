@@ -102,9 +102,9 @@ const UserForm = ({ resetRole, setUserFormStep2 }) => {
       const decoded = jwtDecode(result.data.token);
       if (result?.data?.success) {
         toast.success("User created successfully");
-        createSocket(decoded.id);
         const token = result?.data?.token;
         Cookies.set("token", token, { expires: 1 });
+        createSocket(decoded.id);
       }
       const socket = getSocket(decoded.id);
       // console.log("SOCKET CALLED IN USER FORM ",socket);

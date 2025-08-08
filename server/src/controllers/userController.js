@@ -125,13 +125,18 @@ const getUserByPhone = async (req, res) => {
     // console.log("user found", user);
     if (user) {
       const token = jwt.sign(
-        { id: user._id, phone: user.phone },
+        { id: user._id, phone: user.phone, role: "user" },
         process.env.JWT_SECRET,
         { expiresIn: "1h" }
       );
       return res
         .status(200)
-        .json({ message: "User found", success: true,data:user, token: token });
+        .json({
+          message: "User found",
+          success: true,
+          data: user,
+          token: token,
+        });
     } else {
       return res
         .status(200)
@@ -142,19 +147,24 @@ const getUserByPhone = async (req, res) => {
   }
 };
 
-
-const getUserByAadhar=async(req,res)=>{
-  try{
-    const {aadhar}=req.body;
-    const user =await User.findOne({aadhar});
-    if(user){
-      return res.status(200).json({success:true,data:user})
+const getUserByAadhar = async (req, res) => {
+  try {
+    const { aadhar } = req.body;
+    const user = await User.findOne({ aadhar });
+    if (user) {
+      return res.status(200).json({ success: true, data: user });
     }
-    return res.status(200).json({success:false});
-  }catch(error){
-    res.status(500).json({success:false,message:"error fetching user by aadhar",error:error})
+    return res.status(200).json({ success: false });
+  } catch (error) {
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "error fetching user by aadhar",
+        error: error,
+      });
   }
-}
+};
 
 const checkValidRuralFinId = async (req, res) => {
   try {
@@ -268,7 +278,7 @@ const createUser = async (req, res) => {
       });
     }
 
-    const age=findAge(req.body.dob);
+    const age = findAge(req.body.dob);
 
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
     const hashedPin = await bcrypt.hash(req.body.transactionPin, 10);
@@ -332,9 +342,13 @@ const createUser = async (req, res) => {
 
     const populatedUser = await User.findById(user._id).populate("finance");
 
-    const token =jwt.sign({ id: user._id, phone: user.phone }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      { id: user._id, phone: user.phone,role: "user" },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1h",
+      }
+    );
 
     return res.status(201).json({
       success: true,
@@ -383,7 +397,7 @@ const deleteUser = async (req, res) => {
 
 const getAllTransactionsAmountsByUserId = async (req, res) => {
   try {
-    const start = moment().startOf("week").add(1, "days"); 
+    const start = moment().startOf("week").add(1, "days");
     const end = moment().endOf("week").add(1, "days");
     const { id } = req.params;
     const userTodayTransactions = await UserToUserTransaction.aggregate([
@@ -429,7 +443,10 @@ const getAllTransactionsAmountsByUserId = async (req, res) => {
       thisWeekUserTransactions.push({ totalAmount: 0 });
     }
     return res.status(200).json({
-      data: {today:userTodayTransactions[0].totalAmount,thisWeek:thisWeekUserTransactions[0].totalAmount},
+      data: {
+        today: userTodayTransactions[0].totalAmount,
+        thisWeek: thisWeekUserTransactions[0].totalAmount,
+      },
       message: "User transactions found",
       success: true,
     });
@@ -440,7 +457,7 @@ const getAllTransactionsAmountsByUserId = async (req, res) => {
 
 const getAllAgentTransactionsAmountsByUserId = async (req, res) => {
   try {
-    const start = moment().startOf("week").add(1, "days"); 
+    const start = moment().startOf("week").add(1, "days");
     const end = moment().endOf("week").add(1, "days");
     const { id } = req.params;
     const userTodayTransactions = await AgentToUserTransaction.aggregate([
@@ -486,7 +503,10 @@ const getAllAgentTransactionsAmountsByUserId = async (req, res) => {
       thisWeekUserTransactions.push({ totalAmount: 0 });
     }
     return res.status(200).json({
-      data: {today:userTodayTransactions[0].totalAmount,thisWeek:thisWeekUserTransactions[0].totalAmount},
+      data: {
+        today: userTodayTransactions[0].totalAmount,
+        thisWeek: thisWeekUserTransactions[0].totalAmount,
+      },
       message: "User transactions found",
       success: true,
     });

@@ -204,6 +204,7 @@ const RazorPay = () => {
       // console.log("Admin to Agent Transaction Response in create agent:", response2.data);
       const token = response?.data?.token;
       const decoded = jwtDecode(token);
+      Cookies.set("token", token, { expires: 1 });
       createSocket(decoded?.id);
       const socket = getSocket(decoded?.id);
       // console.log("new user socket send",response?.data?.agent)
@@ -217,7 +218,6 @@ const RazorPay = () => {
         type: "adminToAgent",
       });
       // console.log("Token received:", token);
-      Cookies.set("token", token, { expires: 1 });
       toast.success("Agent account created successfully");
       // razor.close();
       // console.log("Closing Razorpay instance");

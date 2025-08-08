@@ -171,13 +171,18 @@ const getAdminByPhone = async (req, res) => {
     const admin = await Admin.findOne({ phone: phoneNumber, role: role });
     if (admin) {
       const token = jwt.sign(
-        { id: admin._id, phone: admin.phone },
+        { id: admin._id, phone: admin.phone, role: "admin" },
         process.env.JWT_SECRET,
         { expiresIn: "1h" }
       );
       return res
         .status(200)
-        .json({ message: "admin found", success: true,data:admin, token: token });
+        .json({
+          message: "admin found",
+          success: true,
+          data: admin,
+          token: token,
+        });
     } else {
       return res
         .status(200)
@@ -333,18 +338,18 @@ const getRecentActivityData = async (req, res) => {
   }
 };
 
-const getAdminId=async()=>{
-  try{
-    const admin=await Admin.findOne({});
-    if(!admin){
+const getAdminId = async () => {
+  try {
+    const admin = await Admin.findOne({});
+    if (!admin) {
       console.error("No admin found in the database");
       return null;
     }
     return admin._id;
-  }catch(error){
+  } catch (error) {
     console.error("Error fetching admin ID:", error);
   }
-}
+};
 
 const getTransactionVolumeData = async (req, res) => {
   try {
