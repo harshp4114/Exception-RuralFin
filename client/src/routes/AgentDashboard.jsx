@@ -650,7 +650,18 @@ const AgentDashboard = () => {
                     })
                     ?.map((commission) => {
                       return commission?.totalCommissionEarned;
-                    }) || 0}
+                    }) != 0
+                    ? allCommissions
+                        ?.filter((commission) => {
+                          return (
+                            commission?.month === new Date().getMonth() + 1 &&
+                            commission?.year === new Date().getFullYear()
+                          );
+                        })
+                        ?.map((commission) => {
+                          return commission?.totalCommissionEarned;
+                        })
+                    : 0}
                 </p>
               </div>
               <div className="p-2 rounded-md bg-gray-200">

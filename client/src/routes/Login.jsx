@@ -235,9 +235,9 @@ const Login = () => {
 
       // console.log("User verified successfully:", user);
       const token = Cookies.get("token");
+      dispatch(socketConnected());
       const decoded = jwtDecode(token);
       const socket = createSocket(decoded?.id);
-      dispatch(socketConnected());
       // console.log("Socket connected:", socket.id);
       toast.success("OTP verified successfully!");
       setTimeout(() => {

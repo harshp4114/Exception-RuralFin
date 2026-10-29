@@ -1,7 +1,8 @@
-require('dotenv').config();
+require("dotenv").config();
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const connectMongo = require("./config");
 const userRoutes = require("./routes/userRoutes");
 const agentRoutes = require("./routes/agentRoutes");
@@ -35,18 +36,17 @@ connectMongo();
 const httpServer = createServer(app);
 
 const corsOptions = {
-  origin: "https://ruralfin.netlify.app", 
-  // origin:"*",
+  // origin: "https://ruralfin.netlify.app",
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true,                      
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
 
 const io = new Server(httpServer, {
-  cors: corsOptions, 
+  cors: corsOptions,
 });
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -54,17 +54,43 @@ app.use(cookieParser());
 
 let onlineUsers = {};
 
+io.use(async (socket, next) => {
+  console.log("Socket connection attempt:", socket.handshake.auth.token);
+  try {
+    const token = socket.handshake.auth.token;
+    if (!token) {
+      return next(new Error("Authentication error: Token missing"));
+    }
+
+    // Verify token (use your OLRE JWT secret)
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("Decoded token:", decoded);
+    if (!decoded || !decoded.id) {
+      return next(new Error("Authentication error: Invalid token"));
+    }
+    socket.authenticated = true;
+    console.log("Socket authenticated:", decoded.id, socket.authenticated);
+    next();
+  } catch (err) {
+    console.error("Socket authentication error:", err);
+    next(new Error("Authentication error"));
+  }
+});
 
 io.on("connection", (socket) => {
+  console.log(`Client connected: ${socket.id}`);
   socket.on("join", (userId) => {
+    // if (!socket.authenticated) return;
+
     if (!userId) return console.error("User ID is required to join the socket");
     onlineUsers[userId] = socket.id;
     io.emit("activeUsers", Object.keys(onlineUsers));
-    // console.log(`User ${userId} connected with socket id: ${socket.id}`);
+    console.log(`User ${userId} connected with socket id: ${socket.id}`);
     // console.log("Online users after connection:", onlineUsers);
   });
 
   socket.on("money-sent-by-sender", async (data) => {
+    if (!socket.authenticated) return;
     const receiverId = data.transaction.receiverId._id;
     const senderId = data.transaction.senderId._id;
     // console.log("Money sent by sender:", receiverId, senderId);
@@ -113,6 +139,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("newUserAgentTransactionRequest", async (data) => {
+    if (!socket.authenticated) return;
     const userIdSocketId = onlineUsers[data.transaction.userId._id];
     const agentIdSocketId = onlineUsers[data.transaction.agentId._id];
     if (agentIdSocketId && userIdSocketId) {
@@ -160,6 +187,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("UserAgentRequestAccepted", async (data) => {
+    if (!socket.authenticated) return;
     // console.log("User Agent Request Accepted:");
     const userIdSocketId = onlineUsers[data.userId._id];
     // console.log(
@@ -208,6 +236,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("UserAgentRequestRejected", async (data) => {
+    if (!socket.authenticated) return;
     const userIdSocketId = onlineUsers[data.userId._id];
     // console.log("User Agent Request Rejected:", data);
     if (userIdSocketId) {
@@ -250,6 +279,7 @@ io.on("connection", (socket) => {
     }
   });
   socket.on("UserAgentDepositCompleted", async (data) => {
+    if (!socket.authenticated) return;
     // console.log("in UserAgentDepositCompleted");
     const userIdSocketId = onlineUsers[data.userId._id];
     const agentSocketId = onlineUsers[data.agentId._id];
@@ -345,6 +375,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("UserAgentWithdrawCompleted", async (data) => {
+    if (!socket.authenticated) return;
     const userIdSocketId = onlineUsers[data.userId._id];
     // console.log("User Agent Withdraw Completed:", userIdSocketId);
     const adminId = await getAdminId();
@@ -432,6 +463,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("updateSystemSettings", async (data) => {
+    if (!socket.authenticated) return;
     // console.log("updateSystemSettings data:", data);
 
     const notifications = await createAdminNotificationForAll();
@@ -440,6 +472,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("newRecentActivity", async (data) => {
+    if (!socket.authenticated) return;
     // console.log("newRecentActivity data:", data);
     const adminId = await getAdminId();
     const adminIdSocketId = onlineUsers[adminId];
@@ -450,6 +483,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("newAccountCreated", async (data) => {
+    if (!socket.authenticated) return;
     const adminId = await getAdminId();
     const adminIdSocketId = onlineUsers[adminId];
     // console.log(
@@ -466,6 +500,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    if (!socket.authenticated) return;
     // console.log(`Client disconnected: ${socket.id}`);
     for (const userId in onlineUsers) {
       if (onlineUsers[userId] === socket.id) {

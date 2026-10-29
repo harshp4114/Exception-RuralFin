@@ -1,14 +1,23 @@
 import { io } from "socket.io-client";
-
+import Cookies from "js-cookie";
 let socket = null;
 
 export const createSocket = (userId) => {
-  // socket = io("http://localhost:5000", {
-  // transports: ["websocket"],
-  // });
-  socket = io("https://exception-ruralfin.onrender.com", {
+  console.trace("called from")
+  if (socket) return socket;
+  console.log("Creating socket for userId:", userId, Cookies.get("token"));
+  socket = io("http://localhost:5000", {
     transports: ["websocket"],
+    auth: {
+      token: Cookies.get("token"),
+    },
   });
+  // socket = io("https://exception-ruralfin.onrender.com", {
+  //   transports: ["websocket"],
+  // auth:{
+  //   token: Cookies.get("token"),
+  // }
+  // });
 
   socket.on("connect", () => {
     // console.log("Socket connected:", socket.id);
@@ -19,7 +28,7 @@ export const createSocket = (userId) => {
 };
 
 export const getSocket = (userId) => {
-  if (!socket) {
+  if (socket==null) {
     socket = createSocket(userId);
   }
   return socket;

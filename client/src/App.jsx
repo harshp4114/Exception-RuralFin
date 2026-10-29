@@ -28,12 +28,13 @@ function App() {
     if (token) return jwtDecode(token);
     return null;
   }, [token]);
-  useEffect(() => {
-    if (token && !isSocketConnected) {
-      createSocket(decoded?.id);
-      dispatch(socketConnected());
-    }
-  }, [isSocketConnected, dispatch]);
+  // useEffect(() => {
+  //   if (token && !isSocketConnected) {
+  //     // console.log("Creating socket for userId: from app", decoded?.id,token,isSocketConnected);
+  //     createSocket(decoded?.id);
+  //     dispatch(socketConnected());
+  //   }
+  // }, [isSocketConnected, dispatch]);
 
   useEffect(() => {
     if (!decoded) return;
